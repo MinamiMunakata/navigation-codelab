@@ -23,16 +23,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.compose.rally.RallyScreen.Accounts
 import com.example.compose.rally.RallyScreen.Bills
 import com.example.compose.rally.RallyScreen.Overview
 import com.example.compose.rally.RallyScreen.values
 import com.example.compose.rally.data.UserData
 import com.example.compose.rally.ui.accounts.AccountsBody
+import com.example.compose.rally.ui.accounts.SingleAccountBody
 import com.example.compose.rally.ui.bills.BillsBody
 import com.example.compose.rally.ui.components.RallyTabRow
 import com.example.compose.rally.ui.overview.OverviewBody
@@ -70,6 +74,8 @@ fun RallyApp() {
                 )
             }
         ) { innerPadding ->
+
+            val accountsName = Accounts.name
             NavHost(
                 navController = navController,
                 startDestination = Overview.name,
@@ -79,15 +85,39 @@ fun RallyApp() {
                     OverviewBody(
                         onClickSeeAllAccounts = { navController.navigate(Accounts.name) },
                         onClickSeeAllBills = { navController.navigate(Bills.name) },
+                        onAccountClick = { name ->
+                            navigateToSingleAccount(navController, name)
+                        }
                     )
                 }
                 composable(Accounts.name) {
-                    AccountsBody(accounts = UserData.accounts)
+                    AccountsBody(accounts = UserData.accounts) { name ->
+                        navigateToSingleAccount(navController, name)
+                    }
                 }
                 composable(Bills.name) {
                     BillsBody(bills = UserData.bills)
                 }
+                composable(
+                    route = "$accountsName/{name}",
+                    arguments = listOf(
+                        navArgument("name") {
+                            type = NavType.StringType
+                        }
+                    ),
+                ) { entry ->
+                    val accountName = entry.arguments?.getString("name")
+                    val account = UserData.getAccount(accountName)
+                    SingleAccountBody(account = account)
+                }
             }
         }
     }
+}
+
+private fun navigateToSingleAccount(
+    navController: NavHostController,
+    accountName: String,
+) {
+    navController.navigate("${Accounts.name}/$accountName")
 }
